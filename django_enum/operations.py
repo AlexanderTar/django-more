@@ -226,7 +226,7 @@ class AlterEnum(EnumOperation):
             for to_model in [to_state.apps.get_model(info.model_app_label, info.model_name)]
             ]
 
-        if self.remove_values:
+        if self.remove_values or self.add_values:
             # The first post delete actions are to finalise the field types
             if schema_editor.connection.features.has_enum:
                 if schema_editor.connection.features.requires_enum_declaration:
@@ -310,28 +310,6 @@ class AlterEnum(EnumOperation):
                     'old_type': self.temp_db_type,
                     'enum_type': self.db_type}
                 post_actions.append((sql, []))
-
-        elif self.add_values:
-            # Just adding values? Directly modify types, no hassle!
-            if schema_editor.connection.features.requires_enum_declaration:
-                for value in self.add_values:
-                    sql = schema_editor.sql_alter_enum % {
-                        'enum_type': self.db_type,
-                        'value': '%s'}
-                    post_actions.append((sql, [value]))
-            elif schema_editor.connection.features.has_enum:
-                for (from_model, to_model, field, on_delete) in fields:
-                    db_table = schema_editor.quote_name(from_model._meta.db_table)
-                    db_field = schema_editor.quote_name(field.column)
-                    new_field = to_model._meta.get_field(field.name)
-                    db_type, params = new_field.db_type(schema_editor.connection).paramatized
-
-                    schema_editor.sql_alter_column % {
-                        'table': db_table,
-                        'changes': schema_editor.sql_alter_column_type % {
-                            'column': db_field,
-                            'type': db_type}}
-                    post_actions.append((sql, params))
 
         # Prepare database for data to be migrated
         for sql, params in pre_actions:

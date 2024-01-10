@@ -34,7 +34,7 @@ def patch_enum():
 
         # Only patch database backends in use (avoid dependencies)
         for backend in set(db_dict['ENGINE'] for db_name, db_dict in settings.DATABASES.items()):
-            if backend == 'django.db.backends.postgresql':
+            if backend == 'django.db.backends.postgresql' or backend == 'django.contrib.gis.db.backends.postgis':
                 import django.db.backends.postgresql.base
                 p.cls('postgresql.features.DatabaseFeatures', 'PostgresDatabaseFeatures').auto()
                 p.cls('postgresql.schema.DatabaseSchemaEditor', 'PostgresDatabaseSchemaEditor').auto()
